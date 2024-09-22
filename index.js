@@ -166,6 +166,11 @@ io.of('/signal').on('connection', (socket) => {
     });
 });
 
+// /user/status
+app.get('/user/status', (req, res) => {
+    res.json(users);
+});
+
 // Start the server
 server.listen(3006, () => {
     console.log('Listening on *:3006');
