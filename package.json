@@ -2,5 +2,10 @@
   "name": "caller-server",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0",
+    "http": "^0.0.1-security",
+    "socket.io": "^4.8.0"
+  }
 }
