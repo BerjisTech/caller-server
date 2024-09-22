@@ -167,6 +167,6 @@ io.of('/signal').on('connection', (socket) => {
 });
 
 // Start the server
-server.listen(3005, () => {
-    console.log('Listening on *:3005');
+server.listen(3006, () => {
+    console.log('Listening on *:3006');
 });
