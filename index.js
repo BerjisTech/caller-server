@@ -12,7 +12,7 @@ const io = socketIo(server, {
 let users = {}; // Store user status
 let rooms = {}; // Store rooms and their details
 
-io.of('/signal').on('connection', (socket) => {
+io.of('signal').on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
     // User joins a room
@@ -98,6 +98,13 @@ io.of('/signal').on('connection', (socket) => {
             candidate: data.candidate,
             sender_id: socket.id,
         });
+    });
+
+    // Handle errors
+    socket.on('error', (message) => {
+        console.error('Socket error:', message);
+        // emit error
+        socket.emit('error', message);
     });
 
     // Handle chat messages
