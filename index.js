@@ -2,11 +2,16 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const axios = require('axios'); // Import Axios
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     path: '/socket.io',
+    cors: {
+        origin: "*", // Allow all origins for simplicity, adjust as needed
+        methods: ["GET", "POST"]
+    }
 });
 
 let users = {}; // Store user status
@@ -19,7 +24,6 @@ io.of('signal').on('connection', (socket) => {
     socket.on('joinRoom', ({ room_name, user_id }) => {
         const room = rooms[room_name];
         if (room) {
-
             socket.join(room_name);
             socket.room_name = room_name;
             socket.user_id = user_id;
@@ -34,6 +38,15 @@ io.of('signal').on('connection', (socket) => {
                 'existingUsers',
                 room.users.filter((u) => u.socket_id !== socket.id)
             );
+
+            // Send update request to Rails to set is_active to true
+            axios.put(`http://localhost:3000/api/rooms/${room_name}`, { room: { is_active: true } })
+                .then(response => {
+                    console.log('Room status updated:', response.data);
+                })
+                .catch(error => {
+                    console.error('Error updating room status:', error);
+                });
         } else {
             socket.emit('roomJoinError', 'Room not found');
         }
@@ -62,13 +75,23 @@ io.of('signal').on('connection', (socket) => {
             socket.user_id = null;
             room.users = room.users.filter((u) => u.socket_id !== socket.id);
             socket.to(room_name).emit('userLeft', { socket_id: socket.id });
+
             // If admin leaves, assign new admin
             if (room.users.length > 0 && !room.users.some((u) => u.is_admin)) {
                 room.users[0].is_admin = true;
                 io.to(room.users[0].socket_id).emit('adminAssigned');
             }
+
             // Delete room if empty
             if (room.users.length === 0) {
+                // Set room is_active to false
+                axios.put(`http://localhost:3000/api/rooms/${room_name}`, { room: { is_active: false } })
+                    .then(response => {
+                        console.log('Room status updated:', response.data);
+                    })
+                    .catch(error => {
+                        console.error('Error updating room status:', error);
+                    });
                 delete rooms[room_name];
             }
         }
@@ -103,7 +126,6 @@ io.of('signal').on('connection', (socket) => {
     // Handle errors
     socket.on('error', (message) => {
         console.error('Socket error:', message);
-        // emit error
         socket.emit('error', message);
     });
 
