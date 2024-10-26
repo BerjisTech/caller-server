@@ -1,0 +1,26 @@
+5. The server will start on port 3006.
+
+## Folder Structure
+
+- `src/controllers/`: Contains RESTful controllers for each resource.
+- `src/models/`: Contains TypeORM models for each table in the schema.
+- `src/services/`: Contains service classes for business logic and database transactions.
+- `src/helpers/`: Contains utility functions shared across controllers and services.
+- `src/types/interfaces/`: Contains TypeScript interfaces for models, request bodies, and responses.
+- `src/types/constants/`: Contains application-wide constants.
+
+## Technology Stack
+
+- Node.js
+- TypeScript
+- Express.js
+- TypeORM
+- PostgreSQL
+
+## Features
+
+- Models with relationships and validations.
+- RESTful controllers with standard CRUD operations.
+- Services for business logic.
+- Helpers for utility functions.
+- TypeScript interfaces and constants.

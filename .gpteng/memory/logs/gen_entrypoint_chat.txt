@@ -1,0 +1,1269 @@
+
+2024-10-26T14:11:07.974296
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 src/
+2   controllers/
+3     MediaStreamController.ts
+4     ProfileController.ts
+5     RoomController.ts
+6     RoomMemberController.ts
+7     RoomMessageController.ts
+8     RoomMessageReactionController.ts
+9     UserController.ts
+10   models/
+11     MediaStream.ts
+12     Profile.ts
+13     Room.ts
+14     RoomMember.ts
+15     RoomMessage.ts
+16     RoomMessageReaction.ts
+17     User.ts
+18   services/
+19     MediaStreamService.ts
+20     ProfileService.ts
+21     RoomService.ts
+22     RoomMemberService.ts
+23     RoomMessageService.ts
+24     RoomMessageReactionService.ts
+25     UserService.ts
+26   helpers/
+27     errorHandler.ts
+28     responseFormatter.ts
+29   types/
+30     interfaces/
+31       IMediaStream.ts
+32       IProfile.ts
+33       IRoom.ts
+34       IRoomMember.ts
+35       IRoomMessage.ts
+36       IRoomMessageReaction.ts
+37       IUser.ts
+38     constants/
+39       errorMessages.ts
+40   index.ts
+41   app.ts
+42   ormconfig.ts
+
+File: package.json
+1 {
+2   "name": "node-ts-backend",
+3   "version": "1.0.0",
+4   "description": "Node.js backend using TypeScript to replicate a Rails schema",
+5   "main": "dist/index.js",
+6   "scripts": {
+7     "start": "ts-node src/index.ts",
+8     "build": "tsc",
+9     "dev": "nodemon src/index.ts"
+10   },
+11   "dependencies": {
+12     "express": "^4.17.1",
+13     "pg": "^8.7.1",
+14     "reflect-metadata": "^0.1.13",
+15     "typeorm": "^0.2.41",
+16     "uuid": "^8.3.2"
+17   },
+18   "devDependencies": {
+19     "@types/express": "^4.17.13",
+20     "@types/node": "^16.11.7",
+21     "nodemon": "^2.0.15",
+22     "ts-node": "^10.4.0",
+23     "typescript": "^4.4.4"
+24   }
+25 }
+
+File: tsconfig.json
+1 {
+2   "compilerOptions": {
+3     "target": "ES6",
+4     "module": "commonjs",
+5     "strict": true,
+6     "esModuleInterop": true,
+7     "skipLibCheck": true,
+8     "forceConsistentCasingInFileNames": true,
+9     "outDir": "./dist",
+10     "rootDir": "./src"
+11   },
+12   "include": ["src"],
+13   "exclude": ["node_modules"]
+14 }
+
+File: ormconfig.ts
+1 import { ConnectionOptions } from "typeorm";
+2 
+3 const config: ConnectionOptions = {
+4   type: "postgres",
+5   host: process.env.DB_HOST || "localhost",
+6   port: parseInt(process.env.DB_PORT || "5432"),
+7   username: process.env.DB_USERNAME || "postgres",
+8   password: process.env.DB_PASSWORD || "password",
+9   database: process.env.DB_NAME || "rails_schema",
+10   synchronize: true,
+11   logging: false,
+12   entities: [
+13     "src/models/**/*.ts"
+14   ],
+15   migrations: [
+16     "src/migration/**/*.ts"
+17   ],
+18   subscribers: [
+19     "src/subscriber/**/*.ts"
+20   ],
+21   cli: {
+22     entitiesDir: "src/models",
+23     migrationsDir: "src/migration",
+24     subscribersDir: "src/subscriber"
+25   }
+26 };
+27 
+28 export default config;
+
+File: src/models/MediaStream.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 import { Profile } from "./Profile";
+3 
+4 @Entity()
+5 export class MediaStream {
+6   @PrimaryGeneratedColumn("uuid")
+7   id: string;
+8 
+9   @Column("text")
+10   streamData: string;
+11 
+12   @ManyToOne(() => Profile, profile => profile.mediaStreams)
+13   profile: Profile;
+14 
+15   @CreateDateColumn()
+16   createdAt: Date;
+17 
+18   @UpdateDateColumn()
+19   updatedAt: Date;
+20 }
+
+File: src/models/Profile.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 import { MediaStream } from "./MediaStream";
+3 import { Room } from "./Room";
+4 import { RoomMember } from "./RoomMember";
+5 import { RoomMessage } from "./RoomMessage";
+6 import { RoomMessageReaction } from "./RoomMessageReaction";
+7 
+8 @Entity()
+9 export class Profile {
+10   @PrimaryGeneratedColumn("uuid")
+11   id: string;
+12 
+13   @Column()
+14   userId: string;
+15 
+16   @Column()
+17   isAnonymous: boolean;
+18 
+19   @Column()
+20   isAuthenticated: boolean;
+21 
+22   @Column()
+23   isSuperuser: boolean;
+24 
+25   @Column()
+26   isStaff: boolean;
+27 
+28   @Column()
+29   username: string;
+30 
+31   @Column()
+32   email: string;
+33 
+34   @Column()
+35   firstName: string;
+36 
+37   @Column()
+38   lastName: string;
+39 
+40   @Column()
+41   fullName: string;
+42 
+43   @Column()
+44   avatar: string;
+45 
+46   @OneToMany(() => MediaStream, mediaStream => mediaStream.profile)
+47   mediaStreams: MediaStream[];
+48 
+49   @OneToMany(() => Room, room => room.profile)
+50   rooms: Room[];
+51 
+52   @OneToMany(() => RoomMember, roomMember => roomMember.profile)
+53   roomMembers: RoomMember[];
+54 
+55   @OneToMany(() => RoomMessage, roomMessage => roomMessage.profile)
+56   roomMessages: RoomMessage[];
+57 
+58   @OneToMany(() => RoomMessageReaction, roomMessageReaction => roomMessageReaction.profile)
+59   roomMessageReactions: RoomMessageReaction[];
+60 
+61   @CreateDateColumn()
+62   createdAt: Date;
+63 
+64   @UpdateDateColumn()
+65   updatedAt: Date;
+66 }
+
+File: src/models/Room.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 import { Profile } from "./Profile";
+3 import { RoomMember } from "./RoomMember";
+4 import { RoomMessage } from "./RoomMessage";
+5 
+6 @Entity()
+7 export class Room {
+8   @PrimaryGeneratedColumn("uuid")
+9   id: string;
+10 
+11   @Column()
+12   name: string;
+13 
+14   @Column("text")
+15   description: string;
+16 
+17   @Column()
+18   seats: number;
+19 
+20   @Column()
+21   isPrivate: boolean;
+22 
+23   @Column()
+24   password: string;
+25 
+26   @Column()
+27   isActive: boolean;
+28 
+29   @Column("text", { array: true, default: [] })
+30   tags: string[];
+31 
+32   @ManyToOne(() => Profile, profile => profile.rooms)
+33   profile: Profile;
+34 
+35   @OneToMany(() => RoomMember, roomMember => roomMember.room)
+36   roomMembers: RoomMember[];
+37 
+38   @OneToMany(() => RoomMessage, roomMessage => roomMessage.room)
+39   roomMessages: RoomMessage[];
+40 
+41   @CreateDateColumn()
+42   createdAt: Date;
+43 
+44   @UpdateDateColumn()
+45   updatedAt: Date;
+46 }
+
+File: src/models/RoomMember.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 import { Profile } from "./Profile";
+3 import { Room } from "./Room";
+4 
+5 @Entity()
+6 export class RoomMember {
+7   @PrimaryGeneratedColumn("uuid")
+8   id: string;
+9 
+10   @Column()
+11   isAdmin: boolean;
+12 
+13   @ManyToOne(() => Room, room => room.roomMembers)
+14   room: Room;
+15 
+16   @ManyToOne(() => Profile, profile => profile.roomMembers)
+17   profile: Profile;
+18 
+19   @CreateDateColumn()
+20   createdAt: Date;
+21 
+22   @UpdateDateColumn()
+23   updatedAt: Date;
+24 }
+
+File: src/models/RoomMessage.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 import { Profile } from "./Profile";
+3 import { Room } from "./Room";
+4 
+5 @Entity()
+6 export class RoomMessage {
+7   @PrimaryGeneratedColumn("uuid")
+8   id: string;
+9 
+10   @Column("text")
+11   content: string;
+12 
+13   @Column()
+14   isEdited: boolean;
+15 
+16   @Column()
+17   isDeleted: boolean;
+18 
+19   @ManyToOne(() => Room, room => room.roomMessages)
+20   room: Room;
+21 
+22   @ManyToOne(() => Profile, profile => profile.roomMessages)
+23   profile: Profile;
+24 
+25   @Column({ nullable: true })
+26   replyToId: number;
+27 
+28   @Column({ nullable: true })
+29   quotedMessageId: number;
+30 
+31   @CreateDateColumn()
+32   createdAt: Date;
+33 
+34   @UpdateDateColumn()
+35   updatedAt: Date;
+36 }
+
+File: src/models/RoomMessageReaction.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 import { Profile } from "./Profile";
+3 import { RoomMessage } from "./RoomMessage";
+4 
+5 @Entity()
+6 export class RoomMessageReaction {
+7   @PrimaryGeneratedColumn("uuid")
+8   id: string;
+9 
+10   @Column()
+11   reaction: string;
+12 
+13   @ManyToOne(() => RoomMessage, roomMessage => roomMessage.roomMessageReactions)
+14   roomMessage: RoomMessage;
+15 
+16   @ManyToOne(() => Profile, profile => profile.roomMessageReactions)
+17   profile: Profile;
+18 
+19   @CreateDateColumn()
+20   createdAt: Date;
+21 
+22   @UpdateDateColumn()
+23   updatedAt: Date;
+24 }
+
+File: src/models/User.ts
+1 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+2 
+3 @Entity()
+4 export class User {
+5   @PrimaryGeneratedColumn("uuid")
+6   id: string;
+7 
+8   @Column({ unique: true })
+9   email: string;
+10 
+11   @Column()
+12   encryptedPassword: string;
+13 
+14   @Column({ nullable: true })
+15   resetPasswordToken: string;
+16 
+17   @Column({ nullable: true })
+18   resetPasswordSentAt: Date;
+19 
+20   @Column({ nullable: true })
+21   rememberCreatedAt: Date;
+22 
+23   @Column({ unique: true })
+24   jti: string;
+25 
+26   @CreateDateColumn()
+27   createdAt: Date;
+28 
+29   @UpdateDateColumn()
+30   updatedAt: Date;
+31 }
+
+File: src/controllers/MediaStreamController.ts
+1 import { Request, Response } from "express";
+2 import { MediaStreamService } from "../services/MediaStreamService";
+3 
+4 export class MediaStreamController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const mediaStream = await MediaStreamService.create(req.body);
+8       res.status(201).json(mediaStream);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const mediaStreams = await MediaStreamService.getAll();
+17       res.status(200).json(mediaStreams);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const mediaStream = await MediaStreamService.getById(req.params.id);
+26       if (mediaStream) {
+27         res.status(200).json(mediaStream);
+28       } else {
+29         res.status(404).json({ error: "MediaStream not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const mediaStream = await MediaStreamService.update(req.params.id, req.body);
+39       if (mediaStream) {
+40         res.status(200).json(mediaStream);
+41       } else {
+42         res.status(404).json({ error: "MediaStream not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await MediaStreamService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "MediaStream not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/controllers/ProfileController.ts
+1 import { Request, Response } from "express";
+2 import { ProfileService } from "../services/ProfileService";
+3 
+4 export class ProfileController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const profile = await ProfileService.create(req.body);
+8       res.status(201).json(profile);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const profiles = await ProfileService.getAll();
+17       res.status(200).json(profiles);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const profile = await ProfileService.getById(req.params.id);
+26       if (profile) {
+27         res.status(200).json(profile);
+28       } else {
+29         res.status(404).json({ error: "Profile not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const profile = await ProfileService.update(req.params.id, req.body);
+39       if (profile) {
+40         res.status(200).json(profile);
+41       } else {
+42         res.status(404).json({ error: "Profile not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await ProfileService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "Profile not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/controllers/RoomController.ts
+1 import { Request, Response } from "express";
+2 import { RoomService } from "../services/RoomService";
+3 
+4 export class RoomController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const room = await RoomService.create(req.body);
+8       res.status(201).json(room);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const rooms = await RoomService.getAll();
+17       res.status(200).json(rooms);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const room = await RoomService.getById(req.params.id);
+26       if (room) {
+27         res.status(200).json(room);
+28       } else {
+29         res.status(404).json({ error: "Room not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const room = await RoomService.update(req.params.id, req.body);
+39       if (room) {
+40         res.status(200).json(room);
+41       } else {
+42         res.status(404).json({ error: "Room not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await RoomService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "Room not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/controllers/RoomMemberController.ts
+1 import { Request, Response } from "express";
+2 import { RoomMemberService } from "../services/RoomMemberService";
+3 
+4 export class RoomMemberController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const roomMember = await RoomMemberService.create(req.body);
+8       res.status(201).json(roomMember);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const roomMembers = await RoomMemberService.getAll();
+17       res.status(200).json(roomMembers);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const roomMember = await RoomMemberService.getById(req.params.id);
+26       if (roomMember) {
+27         res.status(200).json(roomMember);
+28       } else {
+29         res.status(404).json({ error: "RoomMember not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const roomMember = await RoomMemberService.update(req.params.id, req.body);
+39       if (roomMember) {
+40         res.status(200).json(roomMember);
+41       } else {
+42         res.status(404).json({ error: "RoomMember not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await RoomMemberService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "RoomMember not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/controllers/RoomMessageController.ts
+1 import { Request, Response } from "express";
+2 import { RoomMessageService } from "../services/RoomMessageService";
+3 
+4 export class RoomMessageController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const roomMessage = await RoomMessageService.create(req.body);
+8       res.status(201).json(roomMessage);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const roomMessages = await RoomMessageService.getAll();
+17       res.status(200).json(roomMessages);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const roomMessage = await RoomMessageService.getById(req.params.id);
+26       if (roomMessage) {
+27         res.status(200).json(roomMessage);
+28       } else {
+29         res.status(404).json({ error: "RoomMessage not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const roomMessage = await RoomMessageService.update(req.params.id, req.body);
+39       if (roomMessage) {
+40         res.status(200).json(roomMessage);
+41       } else {
+42         res.status(404).json({ error: "RoomMessage not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await RoomMessageService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "RoomMessage not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/controllers/RoomMessageReactionController.ts
+1 import { Request, Response } from "express";
+2 import { RoomMessageReactionService } from "../services/RoomMessageReactionService";
+3 
+4 export class RoomMessageReactionController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const roomMessageReaction = await RoomMessageReactionService.create(req.body);
+8       res.status(201).json(roomMessageReaction);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const roomMessageReactions = await RoomMessageReactionService.getAll();
+17       res.status(200).json(roomMessageReactions);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const roomMessageReaction = await RoomMessageReactionService.getById(req.params.id);
+26       if (roomMessageReaction) {
+27         res.status(200).json(roomMessageReaction);
+28       } else {
+29         res.status(404).json({ error: "RoomMessageReaction not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const roomMessageReaction = await RoomMessageReactionService.update(req.params.id, req.body);
+39       if (roomMessageReaction) {
+40         res.status(200).json(roomMessageReaction);
+41       } else {
+42         res.status(404).json({ error: "RoomMessageReaction not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await RoomMessageReactionService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "RoomMessageReaction not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/controllers/UserController.ts
+1 import { Request, Response } from "express";
+2 import { UserService } from "../services/UserService";
+3 
+4 export class UserController {
+5   static async create(req: Request, res: Response) {
+6     try {
+7       const user = await UserService.create(req.body);
+8       res.status(201).json(user);
+9     } catch (error) {
+10       res.status(400).json({ error: error.message });
+11     }
+12   }
+13 
+14   static async getAll(req: Request, res: Response) {
+15     try {
+16       const users = await UserService.getAll();
+17       res.status(200).json(users);
+18     } catch (error) {
+19       res.status(400).json({ error: error.message });
+20     }
+21   }
+22 
+23   static async getById(req: Request, res: Response) {
+24     try {
+25       const user = await UserService.getById(req.params.id);
+26       if (user) {
+27         res.status(200).json(user);
+28       } else {
+29         res.status(404).json({ error: "User not found" });
+30       }
+31     } catch (error) {
+32       res.status(400).json({ error: error.message });
+33     }
+34   }
+35 
+36   static async update(req: Request, res: Response) {
+37     try {
+38       const user = await UserService.update(req.params.id, req.body);
+39       if (user) {
+40         res.status(200).json(user);
+41       } else {
+42         res.status(404).json({ error: "User not found" });
+43       }
+44     } catch (error) {
+45       res.status(400).json({ error: error.message });
+46     }
+47   }
+48 
+49   static async delete(req: Request, res: Response) {
+50     try {
+51       const success = await UserService.delete(req.params.id);
+52       if (success) {
+53         res.status(204).send();
+54       } else {
+55         res.status(404).json({ error: "User not found" });
+56       }
+57     } catch (error) {
+58       res.status(400).json({ error: error.message });
+59     }
+60   }
+61 }
+
+File: src/services/MediaStreamService.ts
+1 import { getRepository } from "typeorm";
+2 import { MediaStream } from "../models/MediaStream";
+3 
+4 export class MediaStreamService {
+5   static async create(data: Partial<MediaStream>) {
+6     const mediaStreamRepository = getRepository(MediaStream);
+7     const mediaStream = mediaStreamRepository.create(data);
+8     return mediaStreamRepository.save(mediaStream);
+9   }
+10 
+11   static async getAll() {
+12     const mediaStreamRepository = getRepository(MediaStream);
+13     return mediaStreamRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const mediaStreamRepository = getRepository(MediaStream);
+18     return mediaStreamRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<MediaStream>) {
+22     const mediaStreamRepository = getRepository(MediaStream);
+23     await mediaStreamRepository.update(id, data);
+24     return mediaStreamRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const mediaStreamRepository = getRepository(MediaStream);
+29     const result = await mediaStreamRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/services/ProfileService.ts
+1 import { getRepository } from "typeorm";
+2 import { Profile } from "../models/Profile";
+3 
+4 export class ProfileService {
+5   static async create(data: Partial<Profile>) {
+6     const profileRepository = getRepository(Profile);
+7     const profile = profileRepository.create(data);
+8     return profileRepository.save(profile);
+9   }
+10 
+11   static async getAll() {
+12     const profileRepository = getRepository(Profile);
+13     return profileRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const profileRepository = getRepository(Profile);
+18     return profileRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<Profile>) {
+22     const profileRepository = getRepository(Profile);
+23     await profileRepository.update(id, data);
+24     return profileRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const profileRepository = getRepository(Profile);
+29     const result = await profileRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/services/RoomService.ts
+1 import { getRepository } from "typeorm";
+2 import { Room } from "../models/Room";
+3 
+4 export class RoomService {
+5   static async create(data: Partial<Room>) {
+6     const roomRepository = getRepository(Room);
+7     const room = roomRepository.create(data);
+8     return roomRepository.save(room);
+9   }
+10 
+11   static async getAll() {
+12     const roomRepository = getRepository(Room);
+13     return roomRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const roomRepository = getRepository(Room);
+18     return roomRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<Room>) {
+22     const roomRepository = getRepository(Room);
+23     await roomRepository.update(id, data);
+24     return roomRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const roomRepository = getRepository(Room);
+29     const result = await roomRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/services/RoomMemberService.ts
+1 import { getRepository } from "typeorm";
+2 import { RoomMember } from "../models/RoomMember";
+3 
+4 export class RoomMemberService {
+5   static async create(data: Partial<RoomMember>) {
+6     const roomMemberRepository = getRepository(RoomMember);
+7     const roomMember = roomMemberRepository.create(data);
+8     return roomMemberRepository.save(roomMember);
+9   }
+10 
+11   static async getAll() {
+12     const roomMemberRepository = getRepository(RoomMember);
+13     return roomMemberRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const roomMemberRepository = getRepository(RoomMember);
+18     return roomMemberRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<RoomMember>) {
+22     const roomMemberRepository = getRepository(RoomMember);
+23     await roomMemberRepository.update(id, data);
+24     return roomMemberRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const roomMemberRepository = getRepository(RoomMember);
+29     const result = await roomMemberRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/services/RoomMessageService.ts
+1 import { getRepository } from "typeorm";
+2 import { RoomMessage } from "../models/RoomMessage";
+3 
+4 export class RoomMessageService {
+5   static async create(data: Partial<RoomMessage>) {
+6     const roomMessageRepository = getRepository(RoomMessage);
+7     const roomMessage = roomMessageRepository.create(data);
+8     return roomMessageRepository.save(roomMessage);
+9   }
+10 
+11   static async getAll() {
+12     const roomMessageRepository = getRepository(RoomMessage);
+13     return roomMessageRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const roomMessageRepository = getRepository(RoomMessage);
+18     return roomMessageRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<RoomMessage>) {
+22     const roomMessageRepository = getRepository(RoomMessage);
+23     await roomMessageRepository.update(id, data);
+24     return roomMessageRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const roomMessageRepository = getRepository(RoomMessage);
+29     const result = await roomMessageRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/services/RoomMessageReactionService.ts
+1 import { getRepository } from "typeorm";
+2 import { RoomMessageReaction } from "../models/RoomMessageReaction";
+3 
+4 export class RoomMessageReactionService {
+5   static async create(data: Partial<RoomMessageReaction>) {
+6     const roomMessageReactionRepository = getRepository(RoomMessageReaction);
+7     const roomMessageReaction = roomMessageReactionRepository.create(data);
+8     return roomMessageReactionRepository.save(roomMessageReaction);
+9   }
+10 
+11   static async getAll() {
+12     const roomMessageReactionRepository = getRepository(RoomMessageReaction);
+13     return roomMessageReactionRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const roomMessageReactionRepository = getRepository(RoomMessageReaction);
+18     return roomMessageReactionRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<RoomMessageReaction>) {
+22     const roomMessageReactionRepository = getRepository(RoomMessageReaction);
+23     await roomMessageReactionRepository.update(id, data);
+24     return roomMessageReactionRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const roomMessageReactionRepository = getRepository(RoomMessageReaction);
+29     const result = await roomMessageReactionRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/services/UserService.ts
+1 import { getRepository } from "typeorm";
+2 import { User } from "../models/User";
+3 
+4 export class UserService {
+5   static async create(data: Partial<User>) {
+6     const userRepository = getRepository(User);
+7     const user = userRepository.create(data);
+8     return userRepository.save(user);
+9   }
+10 
+11   static async getAll() {
+12     const userRepository = getRepository(User);
+13     return userRepository.find();
+14   }
+15 
+16   static async getById(id: string) {
+17     const userRepository = getRepository(User);
+18     return userRepository.findOne(id);
+19   }
+20 
+21   static async update(id: string, data: Partial<User>) {
+22     const userRepository = getRepository(User);
+23     await userRepository.update(id, data);
+24     return userRepository.findOne(id);
+25   }
+26 
+27   static async delete(id: string) {
+28     const userRepository = getRepository(User);
+29     const result = await userRepository.delete(id);
+30     return result.affected > 0;
+31   }
+32 }
+
+File: src/helpers/errorHandler.ts
+1 import { Request, Response, NextFunction } from "express";
+2 
+3 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
+4   console.error(err.stack);
+5   res.status(500).json({ error: "Internal Server Error" });
+6 }
+
+File: src/helpers/responseFormatter.ts
+1 export function formatResponse(data: any, message: string = "Success") {
+2   return {
+3     message,
+4     data
+5   };
+6 }
+
+File: src/types/interfaces/IMediaStream.ts
+1 export interface IMediaStream {
+2   id: string;
+3   streamData: string;
+4   profileId: string;
+5   createdAt: Date;
+6   updatedAt: Date;
+7 }
+
+File: src/types/interfaces/IProfile.ts
+1 export interface IProfile {
+2   id: string;
+3   userId: string;
+4   isAnonymous: boolean;
+5   isAuthenticated: boolean;
+6   isSuperuser: boolean;
+7   isStaff: boolean;
+8   username: string;
+9   email: string;
+10   firstName: string;
+11   lastName: string;
+12   fullName: string;
+13   avatar: string;
+14   createdAt: Date;
+15   updatedAt: Date;
+16 }
+
+File: src/types/interfaces/IRoom.ts
+1 export interface IRoom {
+2   id: string;
+3   name: string;
+4   description: string;
+5   seats: number;
+6   isPrivate: boolean;
+7   password: string;
+8   isActive: boolean;
+9   tags: string[];
+10   profileId: string;
+11   createdAt: Date;
+12   updatedAt: Date;
+13 }
+
+File: src/types/interfaces/IRoomMember.ts
+1 export interface IRoomMember {
+2   id: string;
+3   isAdmin: boolean;
+4   roomId: string;
+5   profileId: string;
+6   createdAt: Date;
+7   updatedAt: Date;
+8 }
+
+File: src/types/interfaces/IRoomMessage.ts
+1 export interface IRoomMessage {
+2   id: string;
+3   content: string;
+4   isEdited: boolean;
+5   isDeleted: boolean;
+6   roomId: string;
+7   profileId: string;
+8   replyToId?: number;
+9   quotedMessageId?: number;
+10   createdAt: Date;
+11   updatedAt: Date;
+12 }
+
+File: src/types/interfaces/IRoomMessageReaction.ts
+1 export interface IRoomMessageReaction {
+2   id: string;
+3   reaction: string;
+4   roomMessageId: string;
+5   profileId: string;
+6   createdAt: Date;
+7   updatedAt: Date;
+8 }
+
+File: src/types/interfaces/IUser.ts
+1 export interface IUser {
+2   id: string;
+3   email: string;
+4   encryptedPassword: string;
+5   resetPasswordToken?: string;
+6   resetPasswordSentAt?: Date;
+7   rememberCreatedAt?: Date;
+8   jti: string;
+9   createdAt: Date;
+10   updatedAt: Date;
+11 }
+
+File: src/types/constants/errorMessages.ts
+1 export const errorMessages = {
+2   notFound: "Resource not found",
+3   internalServerError: "Internal Server Error"
+4 };
+
+File: src/index.ts
+1 import "reflect-metadata";
+2 import { createConnection } from "typeorm";
+3 import express from "express";
+4 import { errorHandler } from "./helpers/errorHandler";
+5 import config from "./ormconfig";
+6 
+7 const app = express();
+8 app.use(express.json());
+9 
+10 // Import and use controllers here
+11 // Example: app.use('/media-streams', mediaStreamRouter);
+12 
+13 app.use(errorHandler);
+14 
+15 createConnection(config).then(() => {
+16   app.listen(3006, () => {
+17     console.log("Server is running on port 3006");
+18   });
+19 }).catch(error => console.log("TypeORM connection error: ", error));
+
+File: README.md
+1 # Node.js Backend with TypeScript
+2 
+3 This project is a Node.js backend using TypeScript that replicates a Rails schema. It uses Express.js as the web framework and TypeORM for database interactions with PostgreSQL.
+4 
+5 ## Setup
+6 
+7 1. Clone the repository:
+
+File: repository-url
+1 2. Install dependencies:
+
+File: install
+1 3. Configure the database connection in `src/ormconfig.ts`.
+2 
+3 4. Run the application:
+
+File: dev
+1 5. The server will start on port 3006.
+2 
+3 ## Folder Structure
+4 
+5 - `src/controllers/`: Contains RESTful controllers for each resource.
+6 - `src/models/`: Contains TypeORM models for each table in the schema.
+7 - `src/services/`: Contains service classes for business logic and database transactions.
+8 - `src/helpers/`: Contains utility functions shared across controllers and services.
+9 - `src/types/interfaces/`: Contains TypeScript interfaces for models, request bodies, and responses.
+10 - `src/types/constants/`: Contains application-wide constants.
+11 
+12 ## Technology Stack
+13 
+14 - Node.js
+15 - TypeScript
+16 - Express.js
+17 - TypeORM
+18 - PostgreSQL
+19 
+20 ## Features
+21 
+22 - Models with relationships and validations.
+23 - RESTful controllers with standard CRUD operations.
+24 - Services for business logic.
+25 - Helpers for utility functions.
+26 - TypeScript interfaces and constants.
+
+```
+
+================================== Ai Message ==================================
+
+```bash
+#!/bin/bash
+
+# Step a: Install dependencies
+npm install
+
+# Step b: Run all necessary parts of the codebase
+npm run build & npm run start
+```

@@ -1,0 +1,3 @@
+3. Configure the database connection in `src/ormconfig.ts`.
+
+4. Run the application:
