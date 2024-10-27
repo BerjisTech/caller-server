@@ -8,59 +8,59 @@ import { RoomMessageReaction } from "./RoomMessageReaction";
 @Entity()
 export class Profile {
   @PrimaryGeneratedColumn("uuid")
-  id: string = '';
+  id!: string;
 
   @Column()
-  userId: string = '';
+  userId!: string;
 
   @Column()
-  isAnonymous: boolean = false;
+  isAnonymous!: boolean;
 
   @Column()
-  isAuthenticated: boolean = false;
+  isAuthenticated!: boolean;
 
   @Column()
-  isSuperuser: boolean = false;
+  isSuperuser!: boolean;
 
   @Column()
-  isStaff: boolean = false;
+  isStaff!: boolean;
 
   @Column()
-  username: string = '';
+  username!: string;
 
   @Column()
-  email: string = '';
+  email!: string;
 
   @Column()
-  firstName: string = '';
+  firstName!: string;
 
   @Column()
-  lastName: string = '';
+  lastName!: string;
 
   @Column()
-  fullName: string = '';
+  fullName!: string;
 
   @Column()
-  avatar: string = '';
+  avatar!: string;
 
   @OneToMany(() => MediaStream, mediaStream => mediaStream.profile)
-  mediaStreams: MediaStream[] = [];
+  mediaStreams!: MediaStream[];
 
   @OneToMany(() => Room, room => room.profile)
-  rooms: Room[] = [];
+  rooms!: Room[];
 
   @OneToMany(() => RoomMember, roomMember => roomMember.profile)
-  roomMembers: RoomMember[] = [];
+  roomMembers!: RoomMember[];
 
   @OneToMany(() => RoomMessage, roomMessage => roomMessage.profile)
-  roomMessages: RoomMessage[] = [];
+  roomMessages!: RoomMessage[];
 
   @OneToMany(() => RoomMessageReaction, roomMessageReaction => roomMessageReaction.profile)
-  roomMessageReactions: RoomMessageReaction[] = [];
+  roomMessageReactions!: RoomMessageReaction[];
 
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt!: Date;
 }

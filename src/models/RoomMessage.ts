@@ -5,32 +5,32 @@ import { Room } from "./Room";
 @Entity()
 export class RoomMessage {
   @PrimaryGeneratedColumn("uuid")
-  id: string = '';
+  id!: string;
 
   @Column("text")
-  content: string = '';
+  content!: string;
 
   @Column()
-  isEdited: boolean = false;
+  isEdited!: boolean;
 
   @Column()
-  isDeleted: boolean = false;
+  isDeleted!: boolean;
 
   @ManyToOne(() => Room, room => room.roomMessages)
-  room: Room | null = null;
+  room!: Room | null;
 
   @ManyToOne(() => Profile, profile => profile.roomMessages)
-  profile: Profile | null = null;
+  profile!: Profile | null;
 
   @Column({ nullable: true })
-  replyToId: string = '';
+  replyToId!: string;
 
   @Column({ nullable: true })
-  quotedMessageId: string = '';
+  quotedMessageId!: string;
 
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt!: Date;
 }

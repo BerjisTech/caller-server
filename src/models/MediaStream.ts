@@ -4,17 +4,17 @@ import { Profile } from "./Profile";
 @Entity()
 export class MediaStream {
   @PrimaryGeneratedColumn("uuid")
-  id: string = '';
+  id!: string;
 
   @Column("text")
-  streamData: string = '';
+  streamData!: string;
 
   @ManyToOne(() => Profile, profile => profile.mediaStreams)
   profile!: Profile;
 
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt!: Date;
 }

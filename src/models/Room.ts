@@ -6,41 +6,41 @@ import { RoomMessage } from "./RoomMessage";
 @Entity()
 export class Room {
   @PrimaryGeneratedColumn("uuid")
-  id: string = '';
+  id!: string;
 
   @Column()
-  name: string = '';
+  name!: string;
 
   @Column("text")
-  description: string = '';
+  description!: string;
 
   @Column()
-  seats: number = 2;
+  seats!: number;
 
   @Column()
-  isPrivate: boolean = false;
+  isPrivate!: boolean;
 
   @Column()
-  password: string = '';
+  password!: string;
 
   @Column()
-  isActive: boolean = true;
+  isActive!: boolean;
 
   @Column("text", { array: true, default: [] })
-  tags: string[] = [];
+  tags!: string[];
 
   @ManyToOne(() => Profile, profile => profile.rooms)
-  profile: Profile | null = null;
+  profile!: Profile | null;
 
   @OneToMany(() => RoomMember, roomMember => roomMember.room)
-  roomMembers: RoomMember[] = [];
+  roomMembers!: RoomMember[];
 
   @OneToMany(() => RoomMessage, roomMessage => roomMessage.room)
-  roomMessages: RoomMessage[] = [];
+  roomMessages!: RoomMessage[];
 
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt!: Date;
 }

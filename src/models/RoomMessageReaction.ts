@@ -5,20 +5,20 @@ import { RoomMessage } from "./RoomMessage";
 @Entity()
 export class RoomMessageReaction {
   @PrimaryGeneratedColumn("uuid")
-  id: string = '';
+  id!: string;
 
   @Column()
-  reaction: string = '';
+  reaction!: string;
 
   @ManyToOne(() => RoomMessage, roomMessage => roomMessage.id)
-  roomMessage: RoomMessage | null = null;
+  roomMessage!: RoomMessage | null;
 
   @ManyToOne(() => Profile, profile => profile.roomMessageReactions)
-  profile: Profile | null = null;
+  profile!: Profile | null;
 
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt!: Date;
 }

@@ -5,20 +5,20 @@ import { Room } from "./Room";
 @Entity()
 export class RoomMember {
   @PrimaryGeneratedColumn("uuid")
-  id: string = '';
+  id!: string;
 
   @Column()
-  isAdmin: boolean = false;
+  isAdmin!: boolean;
 
   @ManyToOne(() => Room, room => room.roomMembers)
-  room: Room | null = null;
+  room!: Room | null;
 
   @ManyToOne(() => Profile, profile => profile.roomMembers)
-  profile: Profile | null = null;
+  profile!: Profile | null;
 
   @CreateDateColumn()
-  createdAt: Date = new Date();
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date = new Date();
+  updatedAt!: Date;
 }
