@@ -1,1 +1,12 @@
+# Ignore node_modules directory
 /node_modules
+node_modules/
+node_modules
+
+# Ignore .gpteng directory
+.gpteng
+.gpteng/
+.gpteng/*
+
+# Ignore .env file
+.env
