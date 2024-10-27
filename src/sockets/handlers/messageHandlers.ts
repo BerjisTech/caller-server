@@ -9,39 +9,27 @@ import { RoomMessage } from '../../models/RoomMessage';
 export async function handleChatMessage(io: Namespace, socket: Socket, message: string) {
     const room_name = socket.data.room_name;
     const user_id = socket.data.user_id;
-
     if (room_name && user_id) {
-        // Broadcast the message to other users in the room
         socket.to(room_name).emit('chatMessage', {
             user_id: user_id,
             message,
         });
-
-        // Save the message to the database
-        try {
-            const roomRepository = AppDataSource.getRepository(Room);
-            const profileRepository = AppDataSource.getRepository(Profile);
-            const roomMessageRepository = AppDataSource.getRepository(RoomMessage);
-
-            const room = await roomRepository.findOne({ where: { name: room_name } });
-            const profile = await profileRepository.findOne({ where: { id: user_id } });
-
-            if (room && profile) {
-                const roomMessage = roomMessageRepository.create({
-                    content: message,
-                    isEdited: false,
-                    isDeleted: false,
-                    room: room,
-                    profile: profile,
-                });
-                await roomMessageRepository.save(roomMessage);
-            }
-        } catch (error) {
-            console.error('Error saving chat message:', error);
-            socket.emit('error', 'An error occurred while saving the message');
+        // Save message to database
+        const roomRepository = AppDataSource.getRepository(Room);
+        const profileRepository = AppDataSource.getRepository(Profile);
+        const roomMessageRepository = AppDataSource.getRepository(RoomMessage);
+        const room = await roomRepository.findOne({ where: { name: room_name } });
+        const profile = await profileRepository.findOne({ where: { id: user_id } });
+        if (room && profile) {
+            const roomMessage = roomMessageRepository.create({
+                content: message,
+                isEdited: false,
+                isDeleted: false,
+                room: room,
+                profile: profile
+            });
+            await roomMessageRepository.save(roomMessage);
         }
-    } else {
-        socket.emit('error', 'You are not in a room or user ID is missing');
     }
 }
 
