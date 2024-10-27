@@ -19,7 +19,7 @@ export async function handleChatMessage(io: Namespace, socket: Socket, message: 
         const profileRepository = AppDataSource.getRepository(Profile);
         const roomMessageRepository = AppDataSource.getRepository(RoomMessage);
         const room = await roomRepository.findOne({ where: { name: room_name } });
-        const profile = await profileRepository.findOne({ where: { id: user_id } });
+        const profile = await profileRepository.findOne({ where: { username: user_id } });
         if (room && profile) {
             const roomMessage = roomMessageRepository.create({
                 content: message,

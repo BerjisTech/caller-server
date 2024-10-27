@@ -15,7 +15,7 @@ export async function handleJoinRoom(io: Namespace, socket: Socket, { room_name,
             socket.data.room_name = room_name;
             socket.data.user_id = user_id;
             const profileRepository = AppDataSource.getRepository(Profile);
-            const profile = await profileRepository.findOne({ where: { id: user_id } });
+            const profile = await profileRepository.findOne({ where: { username: user_id } });
             if (!profile) {
                 socket.emit('error', 'Profile not found');
                 return;
@@ -62,7 +62,7 @@ export async function handleCreateRoom(io: Namespace, socket: Socket, { room_nam
             socket.emit('roomExists', 'Room already exists');
         } else {
             const profileRepository = AppDataSource.getRepository(Profile);
-            const profile = await profileRepository.findOne({ where: { id: user_id } });
+            const profile = await profileRepository.findOne({ where: { username: user_id } });
             if (!profile) {
                 socket.emit('error', 'Profile not found');
                 return;

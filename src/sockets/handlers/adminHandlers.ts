@@ -42,7 +42,7 @@ export async function handleAdminAction(io: Namespace, socket: Socket, data: Adm
 
                     // Remove user from RoomMember table
                     const profileRepository = AppDataSource.getRepository(Profile);
-                    const profile = await profileRepository.findOne({ where: { id: targetSocket.data.user_id } });
+                    const profile = await profileRepository.findOne({ where: { username: targetSocket.data.user_id } });
 
                     if (profile) {
                         await roomMemberRepository.delete({
