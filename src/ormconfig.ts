@@ -1,8 +1,5 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
-import { Profile } from './models/Profile';
-import { Room } from './models/Room';
-import { RoomMember } from './models/RoomMember';
 
 dotenv.config();
 
@@ -15,7 +12,9 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_DATABASE,
     synchronize: process.env.DB_SYNCHRONIZE === 'true',
     logging: process.env.DB_LOGGING === 'true',
-    entities: [Room, Profile, RoomMember],
+    entities: [
+        'src/models/**/*.ts'
+    ],
     migrations: [
         'src/migration/**/*.ts'
     ],
