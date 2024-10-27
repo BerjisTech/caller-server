@@ -26,7 +26,7 @@ export class RoomMessage {
   replyToId: string = '';
 
   @Column({ nullable: true })
-  quotedMessageId: number | null = null;
+  quotedMessageId: string = '';
 
   @CreateDateColumn()
   createdAt: Date = new Date();
