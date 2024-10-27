@@ -10,43 +10,48 @@ export async function handleJoinRoom(io: Namespace, socket: Socket, { room_name,
     try {
         const roomRepository = AppDataSource.getRepository(Room);
         const room = await roomRepository.findOne({ where: { name: room_name }, relations: ['roomMembers'] });
-        if (room) {
-            socket.join(room_name);
-            socket.data.room_name = room_name;
-            socket.data.user_id = user_id;
-            const profileRepository = AppDataSource.getRepository(Profile);
-            const profile = await profileRepository.findOne({ where: { username: user_id } });
-            if (!profile) {
-                socket.emit('error', 'Profile not found');
-                return;
-            }
-            const roomMemberRepository = AppDataSource.getRepository(RoomMember);
-            // Check if user is already a member
-            let roomMember = await roomMemberRepository.findOne({ where: { room: room, profile: profile } });
-            if (!roomMember) {
-                roomMember = roomMemberRepository.create({
-                    isAdmin: false,
-                    room: room,
-                    profile: profile
-                });
-                await roomMemberRepository.save(roomMember);
-            }
-            // Notify existing users
-            socket.to(room_name).emit('userJoined', { socket_id: socket.id, user_id: user_id });
-            // Send existing users to the new user
-            const existingMembers = await roomMemberRepository.find({ where: { room: room }, relations: ['profile'] });
-            const existingUsers = existingMembers.map((member: RoomMember) => ({
-                socket_id: member.profile?.id ?? '', // Adjust this as needed
-                user_id: member.profile?.id ?? ''
-            })).filter((user: { socket_id: string; user_id: string }) => { user.user_id !== user_id });
-            socket.emit('existingUsers', existingUsers);
-            // Update room isActive status
-            if (!room.isActive) {
-                room.isActive = true;
-                await roomRepository.save(room);
-            }
-        } else {
-            socket.emit('roomJoinError', 'Room not found');
+        if (!room) {
+            console.error(`Room not found: ${room_name}`);
+            socket.emit('error', 'Room not found');
+            return;
+        }
+
+        const profileRepository = AppDataSource.getRepository(Profile);
+        const profile = await profileRepository.findOne({ where: { username: user_id } });
+        if (!profile) {
+            console.error(`Profile not found: ${user_id}`);
+            socket.emit('error', 'Profile not found');
+            return;
+        }
+
+        socket.join(room_name);
+        socket.data.room_name = room_name;
+        socket.data.user_id = user_id;
+
+        const roomMemberRepository = AppDataSource.getRepository(RoomMember);
+        let roomMember = await roomMemberRepository.findOne({ where: { room: room, profile: profile } });
+        if (!roomMember) {
+            roomMember = roomMemberRepository.create({
+                isAdmin: false,
+                room: room,
+                profile: profile
+            });
+            await roomMemberRepository.save(roomMember);
+        }
+
+        socket.to(room_name).emit('userJoined', { socket_id: socket.id, user_id: user_id });
+
+        const existingMembers = await roomMemberRepository.find({ where: { room: room }, relations: ['profile'] });
+        const existingUsers = existingMembers.map((member: RoomMember) => ({
+            socket_id: member.profile?.id ?? '',
+            user_id: member.profile?.id ?? ''
+        }));
+
+        socket.emit('existingUsers', existingUsers);
+        // Update room isActive status
+        if (!room.isActive) {
+            room.isActive = true;
+            await roomRepository.save(room);
         }
     } catch (error) {
         console.error('Error in joinRoom:', error);

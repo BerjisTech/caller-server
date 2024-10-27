@@ -18,6 +18,11 @@ export class RoomService {
     return roomRepository.findOne(id);
   }
 
+  static async getByName(name: string) {
+    const roomRepository = getRepository(Room);
+    return roomRepository.findOne({ where: { name } });
+  }
+
   static async update(id: string, data: Partial<Room>) {
     const roomRepository = getRepository(Room);
     await roomRepository.update(id, data);

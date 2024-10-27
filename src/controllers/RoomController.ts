@@ -33,6 +33,18 @@ export class RoomController {
     }
   }
 
+  static async getByName(req: Request, res: Response) {
+    try {
+      const room = await RoomService.getByName(req.params.name);
+      if (room) {
+        res.status(200).json(room);
+      } else {
+        res.status(404).json({ error: "Room not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+
   static async update(req: Request, res: Response) {
     try {
       const room = await RoomService.update(req.params.id, req.body);
