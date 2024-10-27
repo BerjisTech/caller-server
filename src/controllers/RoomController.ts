@@ -6,7 +6,7 @@ export class RoomController {
     try {
       const room = await RoomService.create(req.body);
       res.status(201).json(room);
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   }
@@ -15,7 +15,7 @@ export class RoomController {
     try {
       const rooms = await RoomService.getAll();
       res.status(200).json(rooms);
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   }
@@ -28,7 +28,7 @@ export class RoomController {
       } else {
         res.status(404).json({ error: "Room not found" });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   }
@@ -41,9 +41,10 @@ export class RoomController {
       } else {
         res.status(404).json({ error: "Room not found" });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
+  }
 
   static async update(req: Request, res: Response) {
     try {
@@ -53,7 +54,7 @@ export class RoomController {
       } else {
         res.status(404).json({ error: "Room not found" });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   }
@@ -66,7 +67,7 @@ export class RoomController {
       } else {
         res.status(404).json({ error: "Room not found" });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   }
