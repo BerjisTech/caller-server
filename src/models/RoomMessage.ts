@@ -23,7 +23,7 @@ export class RoomMessage {
   profile: Profile | null = null;
 
   @Column({ nullable: true })
-  replyToId: number | null = null;
+  replyToId: string = '';
 
   @Column({ nullable: true })
   quotedMessageId: number | null = null;
