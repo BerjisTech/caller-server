@@ -13,6 +13,11 @@ const io = socketIo(server, {
         methods: ["GET", "POST"]
     }
 });
+// const api_path = localhost:8089 in dev or nichapie.com in production
+let api_path = 'http://localhost:8089';
+if (process.env.NODE_ENV === 'production') {
+    api_path = 'https://nichapie.com';
+}
 
 let users = {}; // Store user status
 let rooms = {}; // Store rooms and their details
@@ -40,7 +45,7 @@ io.of('signal').on('connection', (socket) => {
             );
 
             // Send update request to Rails to set is_active to true
-            axios.put(`http://localhost:3000/api/rooms/${room_name}`, { room: { is_active: true } })
+            axios.put(`${api_path}/api/rooms/${room_name}`, { room: { is_active: true } })
                 .then(response => {
                     console.log('Room status updated:', response.data);
                 })
@@ -85,7 +90,7 @@ io.of('signal').on('connection', (socket) => {
             // Delete room if empty
             if (room.users.length === 0) {
                 // Set room is_active to false
-                axios.put(`http://localhost:3000/api/rooms/${room_name}`, { room: { is_active: false } })
+                axios.put(`${api_path}/api/rooms/${room_name}`, { room: { is_active: false } })
                     .then(response => {
                         console.log('Room status updated:', response.data);
                     })
