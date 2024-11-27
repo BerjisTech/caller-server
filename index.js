@@ -1,4 +1,6 @@
 // server.js
+require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -14,11 +16,25 @@ const io = socketIo(server, {
     }
 });
 // const api_path = localhost:8089 in dev or nichapie.com in production
-let api_path = 'http://localhost:8089';
-if (process.env.NODE_ENV === 'production') {
-    api_path = 'https://nichapie.com';
-}
+const api_path = process.env.NODE_ENV === 'production'
+    ? 'https://nichapie.com'
+    : 'http://localhost:8089';
 
+    console.log(`API Path is set to: ${api_path}`);
+
+    const dbConfig = {
+        type: process.env.DB_TYPE,
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        synchronize: process.env.DB_SYNCHRONIZE === 'true',
+        logging: process.env.DB_LOGGING === 'true',
+    };
+    
+    console.log('Database Config:', dbConfig);
+    
 let users = {}; // Store user status
 let rooms = {}; // Store rooms and their details
 
