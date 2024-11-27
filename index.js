@@ -187,6 +187,7 @@ io.of('signal').on('connection', (socket) => {
 
     // Broadcaster starts streaming
     socket.on('start-stream', ({ user_id }) => {
+        console.log(`Broadcaster ${socket.id} started streaming`);
         broadcasters.set(socket.id, { viewers: new Set(), user_id });
         io.emit('broadcaster-available', Array.from(broadcasters.keys()).map((id) => ({
             id,
@@ -208,21 +209,25 @@ io.of('signal').on('connection', (socket) => {
     });
 
     socket.on('request-broadcasters', () => {
+        console.log('Requesting broadcasters');
         socket.emit('broadcaster-available', broadcasters); // Send list to requester
     });
 
     // Handle streaming-specific WebRTC signaling
     socket.on('stream-offer', (data) => {
+        console.log('Received stream offer:', data);
         const { target_id, offer } = data;
         socket.to(target_id).emit('stream-offer', { offer, sender_id: socket.id });
     });
 
     socket.on('stream-answer', (data) => {
+        console.log('Received stream answer:', data);
         const { target_id, answer } = data;
         socket.to(target_id).emit('stream-answer', { answer, sender_id: socket.id });
     });
 
     socket.on('stream-ice-candidate', (data) => {
+        console.log('Received stream ICE candidate:', data);
         const { target_id, candidate } = data;
         socket.to(target_id).emit('stream-ice-candidate', { candidate, sender_id: socket.id });
     });
