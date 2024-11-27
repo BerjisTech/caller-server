@@ -187,26 +187,32 @@ io.of('signal').on('connection', (socket) => {
 
     // Broadcaster starts streaming
     socket.on('start-stream', ({ user_id }) => {
-        console.log(`Broadcaster ${socket.id} started streaming`);
+        console.log(`Broadcaster ${socket.id} started streaming with user_id: ${user_id}`);
         broadcasters.set(socket.id, { viewers: new Set(), user_id });
+        console.log('Current broadcasters:', Array.from(broadcasters.keys()));
         io.emit('broadcaster-available', Array.from(broadcasters.keys()).map((id) => ({
             id,
             name: broadcasters.get(id).user_id || 'Anonymous'
-        }))); // Notify clients
+        })));
     });
+
 
     // Viewer joins a broadcaster's stream
     socket.on('join-stream', ({ broadcaster_id }) => {
-        console.log(`Viewer ${socket.id} joined broadcaster ${broadcaster_id}`);
-        const viewers = broadcasters.get(broadcaster_id);
+        console.log(`Viewer ${socket.id} attempting to join broadcaster ${broadcaster_id}`);
+        const broadcaster = broadcasters.get(broadcaster_id);
 
-        if (viewers) {
-            viewers.add(socket.id);
+        if (broadcaster) {
+            broadcaster.viewers.add(socket.id);
+            console.log(`Viewer ${socket.id} successfully joined broadcaster ${broadcaster_id}`);
+            console.log('Current viewers for broadcaster:', Array.from(broadcaster.viewers));
             socket.to(broadcaster_id).emit('viewer-joined', { viewer_id: socket.id });
         } else {
+            console.error('Broadcaster not found for ID:', broadcaster_id);
             socket.emit('error', 'Broadcaster not found');
         }
     });
+
 
     socket.on('request-broadcasters', () => {
         console.log('Requesting broadcasters');
@@ -215,16 +221,15 @@ io.of('signal').on('connection', (socket) => {
 
     // Handle streaming-specific WebRTC signaling
     socket.on('stream-offer', (data) => {
-        console.log('Received stream offer:', data);
-        const { target_id, offer } = data;
-        socket.to(target_id).emit('stream-offer', { offer, sender_id: socket.id });
+        console.log('Received stream offer from:', socket.id, 'to:', data.target_id, 'Offer:', data.offer);
+        socket.to(data.target_id).emit('stream-offer', { offer: data.offer, sender_id: socket.id });
     });
 
     socket.on('stream-answer', (data) => {
-        console.log('Received stream answer:', data);
-        const { target_id, answer } = data;
-        socket.to(target_id).emit('stream-answer', { answer, sender_id: socket.id });
+        console.log('Received stream answer from:', socket.id, 'to:', data.target_id, 'Answer:', data.answer);
+        socket.to(data.target_id).emit('stream-answer', { answer: data.answer, sender_id: socket.id });
     });
+
 
     socket.on('stream-ice-candidate', (data) => {
         console.log('Received stream ICE candidate:', data);
@@ -263,7 +268,7 @@ io.of('signal').on('connection', (socket) => {
                     broadcaster.viewers.delete(socket.id);
                 }
             });
-        
+
             io.emit('broadcaster-available', Array.from(broadcasters.keys()).map((id) => ({
                 id,
                 name: broadcasters.get(id).user_id || 'Anonymous'
