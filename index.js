@@ -203,13 +203,17 @@ io.of('signal').on('connection', (socket) => {
 
     // Broadcaster starts streaming
     socket.on('start-stream', ({ user_id }) => {
+        console.log('=== Start Stream Event ===');
         console.log(`Broadcaster ${socket.id} started streaming with user_id: ${user_id}`);
         broadcasters.set(socket.id, { viewers: new Set(), user_id });
-        console.log('Current broadcasters:', Array.from(broadcasters.keys()));
-        io.emit('broadcaster-available', Array.from(broadcasters.keys()).map((id) => ({
+        
+        const broadcastersArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
             id,
-            name: broadcasters.get(id).user_id || 'Anonymous'
-        })));
+            name: data.user_id || 'Anonymous'
+        }));
+        
+        console.log('Updated broadcasters list:', broadcastersArray);
+        io.emit('broadcaster-available', broadcastersArray);
     });
 
 
@@ -232,7 +236,12 @@ io.of('signal').on('connection', (socket) => {
 
     socket.on('request-broadcasters', () => {
         console.log('Requesting broadcasters');
-        socket.emit('broadcaster-available', broadcasters); // Send list to requester
+        const broadcastersArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
+            id,
+            name: data.user_id || 'Anonymous'
+        }));
+        console.log('Sending broadcasters:', broadcastersArray);
+        socket.emit('broadcaster-available', broadcastersArray);
     });
 
     // Handle streaming-specific WebRTC signaling
