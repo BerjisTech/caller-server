@@ -312,6 +312,7 @@ io.of("signal").on("connection", (socket: Socket) => {
     socket.to(target_id).emit('stream-ice-candidate', { candidate, sender_id: socket.id });
   });
 
+
   // User disconnects
   socket.on("disconnect", () => {
     const room_name = (socket as any).room_name;
