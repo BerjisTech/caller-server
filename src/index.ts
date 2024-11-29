@@ -313,6 +313,23 @@ io.of("signal").on("connection", (socket: Socket) => {
     socket.to(target_id).emit('stream-ice-candidate', { candidate, sender_id: socket.id });
   });
 
+  socket.on('leave-stream', ({ broadcaster_id }) => {
+    console.log(`Viewer ${socket.id} leaving broadcaster ${broadcaster_id}`);
+    const broadcaster = broadcasters.get(broadcaster_id);
+
+    if (broadcaster) {
+      broadcaster.viewers.delete(socket.id);
+      console.log(`Viewer ${socket.id} successfully left broadcaster ${broadcaster_id}`);
+      console.log('Current viewers for broadcaster:', Array.from(broadcaster.viewers));
+
+      socket.to(broadcaster_id).emit('viewer-left', { viewer_id: socket.id });
+      broadcastBroadcastersList(); // Update all clients with new viewer count
+    } else {
+      console.error('Broadcaster not found for ID:', broadcaster_id);
+      socket.emit('error', 'Broadcaster not found');
+    }
+  });
+
 
   // User disconnects
   socket.on("disconnect", () => {
