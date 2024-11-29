@@ -44,7 +44,7 @@ let users: Record<string, any> = {};
 let rooms: Record<string, Room> = {};
 
 // Signal namespace
-io.of("/signal").on("connection", (socket: Socket) => {
+io.of("signal").on("connection", (socket: Socket) => {
   console.log("User connected:", socket.id);
 
   // User joins a room
