@@ -32,6 +32,7 @@ interface Room {
 }
 
 interface BroadcasterInfo {
+  id: string;
   viewers: Set<string>;
   user_id: string;
   socket_id: string;
@@ -255,6 +256,7 @@ io.of("signal").on("connection", (socket: Socket) => {
     console.log(`Broadcaster ${socket.id} started streaming with user_id: ${user_id}`);
 
     broadcasters.set(socket.id, {
+      id: socket.id,
       viewers: new Set(),
       user_id,
       socket_id: socket.id
