@@ -2,7 +2,7 @@
   "name": "node-ts-backend",
   "version": "1.0.0",
   "description": "Node.js backend using TypeScript to replicate a Rails schema",
-  "main": "dist/index.js",
+  "main": "dist/index.ts",
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc",
