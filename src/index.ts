@@ -236,11 +236,14 @@ io.of("signal").on("connection", (socket: Socket) => {
      */
   // Helper function to get current broadcasters list
   const getBroadcastersList = () => {
-    return Array.from(broadcasters.entries()).map(([id, data]) => ({
+    let broadcasterArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
       id,
       name: data.user_id || 'Anonymous',
       viewerCount: data.viewers.size
     }));
+
+    console.log('Current broadcasters:', broadcasterArray);
+    return broadcasterArray;
   };
 
   // Helper function to broadcast current broadcaster list to all clients
