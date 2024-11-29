@@ -37,6 +37,7 @@ interface BroadcasterInfo {
   user_id: string;
   socket_id: string;
   name?: string;
+  viewerCount?: number;
 }
 
 let broadcasters = new Map<string, BroadcasterInfo>();
