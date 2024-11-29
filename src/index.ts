@@ -31,12 +31,20 @@ interface Room {
   users: User[];
 }
 
+interface BroadcasterInfo {
+  viewers: Set<string>;
+  user_id: string;
+  socket_id: string;
+}
+
+let broadcasters = new Map<string, BroadcasterInfo>();
+
 // Store user status and room details
 let users: Record<string, any> = {};
 let rooms: Record<string, Room> = {};
 
 // Signal namespace
-io.of("signal").on("connection", (socket: Socket) => {
+io.of("/signal").on("connection", (socket: Socket) => {
   console.log("User connected:", socket.id);
 
   // User joins a room
@@ -224,21 +232,34 @@ io.of("signal").on("connection", (socket: Socket) => {
      * Viewer joins a broadcaster's stream
      * Handle streaming-specific WebRTC signaling
      */
-  let broadcasters = new Map(); // Maps broadcaster ID to a set of viewer IDs
+  // Helper function to get current broadcasters list
+  const getBroadcastersList = () => {
+    return Array.from(broadcasters.entries()).map(([id, data]) => ({
+      id,
+      name: data.user_id || 'Anonymous',
+      viewerCount: data.viewers.size
+    }));
+  };
+
+  // Helper function to broadcast current broadcaster list to all clients
+  const broadcastBroadcastersList = () => {
+    const list = getBroadcastersList();
+    console.log('Broadcasting updated broadcaster list:', list);
+    io.of("/signal").emit('broadcaster-available', list);
+  };
 
   // Broadcaster starts streaming
   socket.on('start-stream', ({ user_id }) => {
     console.log('=== Start Stream Event ===');
     console.log(`Broadcaster ${socket.id} started streaming with user_id: ${user_id}`);
-    broadcasters.set(socket.id, { viewers: new Set(), user_id });
 
-    const broadcastersArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
-      id,
-      name: data.user_id || 'Anonymous'
-    }));
+    broadcasters.set(socket.id, {
+      viewers: new Set(),
+      user_id,
+      socket_id: socket.id
+    });
 
-    console.log('Updated broadcasters list:', broadcastersArray);
-    io.emit('broadcaster-available', broadcastersArray);
+    broadcastBroadcastersList();
   });
 
 
@@ -251,7 +272,9 @@ io.of("signal").on("connection", (socket: Socket) => {
       broadcaster.viewers.add(socket.id);
       console.log(`Viewer ${socket.id} successfully joined broadcaster ${broadcaster_id}`);
       console.log('Current viewers for broadcaster:', Array.from(broadcaster.viewers));
+
       socket.to(broadcaster_id).emit('viewer-joined', { viewer_id: socket.id });
+      broadcastBroadcastersList(); // Update all clients with new viewer count
     } else {
       console.error('Broadcaster not found for ID:', broadcaster_id);
       socket.emit('error', 'Broadcaster not found');
@@ -259,14 +282,10 @@ io.of("signal").on("connection", (socket: Socket) => {
   });
 
 
+  // Request broadcasters list
   socket.on('request-broadcasters', () => {
-    console.log('Requesting broadcasters');
-    const broadcastersArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
-      id,
-      name: data.user_id || 'Anonymous'
-    }));
-    console.log('Sending broadcasters:', broadcastersArray);
-    socket.emit('broadcaster-available', broadcastersArray);
+    console.log('Client requesting broadcasters list');
+    socket.emit('broadcaster-available', getBroadcastersList());
   });
 
   // Handle streaming-specific WebRTC signaling
@@ -302,25 +321,28 @@ io.of("signal").on("connection", (socket: Socket) => {
         }
         if (room.users.length === 0) delete rooms[room_name];
       }
-    } else {
-      broadcasters.forEach((broadcaster, id) => {
-        if (id === socket.id) {
-          // Remove broadcaster and notify viewers
-          broadcaster.viewers.forEach((viewerId: any) => {
-            io.to(viewerId).emit('broadcaster-disconnected');
-          });
-          broadcasters.delete(id);
-        } else if (broadcaster.viewers.has(socket.id)) {
-          // Remove viewer from the broadcaster's list
-          broadcaster.viewers.delete(socket.id);
-        }
+    }
+    // Check if disconnected user was a broadcaster
+    if (broadcasters.has(socket.id)) {
+      const broadcaster = broadcasters.get(socket.id)!;
+
+      // Notify all viewers that broadcaster has disconnected
+      broadcaster.viewers.forEach((viewerId) => {
+        io.to(viewerId).emit('broadcaster-disconnected', { broadcaster_id: socket.id });
       });
 
-      io.emit('broadcaster-available', Array.from(broadcasters.keys()).map((id) => ({
-        id,
-        name: broadcasters.get(id).user_id || 'Anonymous'
-      })));
+      broadcasters.delete(socket.id);
+      broadcastBroadcastersList();
+    } else {
+      // Check if disconnected user was a viewer
+      broadcasters.forEach((broadcaster) => {
+        if (broadcaster.viewers.has(socket.id)) {
+          broadcaster.viewers.delete(socket.id);
+          broadcastBroadcastersList();
+        }
+      });
     }
+
     console.log("User disconnected:", socket.id);
   });
 });
