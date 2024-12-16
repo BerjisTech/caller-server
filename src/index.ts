@@ -282,6 +282,7 @@ io.of("signal").on("connection", (socket: Socket) => {
   socket.on('join-stream', ({ broadcaster_id, viewer }) => {
     console.log(`Viewer ${socket.id} attempting to join broadcaster ${broadcaster_id}`);
     const broadcaster = broadcasters.get(broadcaster_id);
+    viewer.id = socket.id;
 
     if (broadcaster) {
       broadcaster.viewers.push(viewer);
