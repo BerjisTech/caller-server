@@ -294,10 +294,12 @@ io.of("signal").on("connection", (socket: Socket) => {
     const broadcaster = broadcasters.get(broadcaster_id);
     if (broadcaster) {
       console.log('Broadcasting chat to viewers:', Array.from(broadcaster.viewers));
-      broadcaster.viewers.forEach((viewerId) => {
-        console.log('Sending chat to viewer:', viewerId);
-        socket.to(viewerId).emit('stream-chat', { user_id: broadcaster.user_id, message });
-      });
+      socket.emit('stream-chat', { user_id: socket.id, message });
+      // broadcaster.viewers.forEach((viewerId) => {
+      //   console.log('Sending chat to viewer:', viewerId);
+      //   socket.to(viewerId).emit('stream-chat', { user_id: socket.id, message });
+      // });
+      // socket.to(broadcaster.id).emit('stream-chat', { user_id: socket.id, message });
     } else {
       console.error('Broadcaster not found for socket ID:', broadcaster_id);
     }
@@ -309,10 +311,11 @@ io.of("signal").on("connection", (socket: Socket) => {
     const broadcaster = broadcasters.get(socket.id);
     if (broadcaster) {
       console.log('Broadcasting reaction to viewers:', Array.from(broadcaster.viewers));
-      broadcaster.viewers.forEach((viewerId) => {
-        socket.to(viewerId).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
-      });
-      socket.to(broadcaster.id).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
+      socket.emit('stream-reaction', { user_id: socket.id, reaction });
+      // broadcaster.viewers.forEach((viewerId) => {
+      //   socket.to(viewerId).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
+      // });
+      // socket.to(broadcaster.id).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
     } else {
       console.error('Broadcaster not found for socket ID:', socket.id);
     }
