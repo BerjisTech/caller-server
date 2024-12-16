@@ -296,7 +296,7 @@ io.of("signal").on("connection", (socket: Socket) => {
       console.log('Broadcasting chat to viewers:', Array.from(broadcaster.viewers));
       broadcaster.viewers.forEach((viewerId) => {
         console.log('Sending chat to viewer:', viewerId);
-        io.to(viewerId).emit('stream-chat', { user_id: broadcaster.user_id, message });
+        socket.to(viewerId).emit('stream-chat', { user_id: broadcaster.user_id, message });
       });
     } else {
       console.error('Broadcaster not found for socket ID:', broadcaster_id);
@@ -310,9 +310,9 @@ io.of("signal").on("connection", (socket: Socket) => {
     if (broadcaster) {
       console.log('Broadcasting reaction to viewers:', Array.from(broadcaster.viewers));
       broadcaster.viewers.forEach((viewerId) => {
-        io.to(viewerId).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
+        socket.to(viewerId).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
       });
-      io.to(broadcaster.id).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
+      socket.to(broadcaster.id).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
     } else {
       console.error('Broadcaster not found for socket ID:', socket.id);
     }
@@ -324,7 +324,7 @@ io.of("signal").on("connection", (socket: Socket) => {
     console.log('Client requesting broadcasters list');
     const broadcastersList = getBroadcastersList();
     socket.emit('broadcaster-available', broadcastersList);
-    io.to(socket.id).emit('broadcaster-available', broadcastersList); // Send back to stream creator
+    socket.to(socket.id).emit('broadcaster-available', broadcastersList); // Send back to stream creator
   });
 
   // Handle streaming-specific WebRTC signaling
