@@ -245,7 +245,10 @@ io.of("signal").on("connection", (socket: Socket) => {
     let broadcasterArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
       id,
       name: data.user_id || 'Anonymous',
-      viewerCount: data.viewers.length
+      viewerCount: data.viewers.length,
+      viewers: data.viewers,
+      user_id: data.user_id,
+      socket_id: data.id
     }));
 
     console.log('Current broadcasters:', broadcasterArray);
