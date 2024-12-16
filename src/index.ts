@@ -33,11 +33,16 @@ interface Room {
 
 interface BroadcasterInfo {
   id: string;
-  viewers: Set<string>;
+  viewers: Viewer[];
   user_id: string;
   socket_id: string;
   name?: string;
   viewerCount?: number;
+}
+
+export interface Viewer {
+  id: string;
+  name: string;
 }
 
 let broadcasters = new Map<string, BroadcasterInfo>();
@@ -240,7 +245,7 @@ io.of("signal").on("connection", (socket: Socket) => {
     let broadcasterArray = Array.from(broadcasters.entries()).map(([id, data]) => ({
       id,
       name: data.user_id || 'Anonymous',
-      viewerCount: data.viewers.size
+      viewerCount: data.viewers.length
     }));
 
     console.log('Current broadcasters:', broadcasterArray);
@@ -261,7 +266,7 @@ io.of("signal").on("connection", (socket: Socket) => {
 
     broadcasters.set(socket.id, {
       id: socket.id,
-      viewers: new Set(),
+      viewers: [],
       user_id,
       socket_id: socket.id
     });
@@ -271,12 +276,12 @@ io.of("signal").on("connection", (socket: Socket) => {
 
 
   // Viewer joins a broadcaster's stream
-  socket.on('join-stream', ({ broadcaster_id }) => {
+  socket.on('join-stream', ({ broadcaster_id, viewer }) => {
     console.log(`Viewer ${socket.id} attempting to join broadcaster ${broadcaster_id}`);
     const broadcaster = broadcasters.get(broadcaster_id);
 
     if (broadcaster) {
-      broadcaster.viewers.add(socket.id);
+      broadcaster.viewers.push(viewer);
       console.log(`Viewer ${socket.id} successfully joined broadcaster ${broadcaster_id}`);
       console.log('Current viewers for broadcaster:', Array.from(broadcaster.viewers));
 
@@ -289,17 +294,17 @@ io.of("signal").on("connection", (socket: Socket) => {
   });
 
   // Stream chat messages
-  socket.on('stream-chat', ({ message, broadcaster_id }) => {
+  socket.on('stream-chat', ({ message, broadcaster_id, name }) => {
     console.log(`Received chat message: ${message} from viewer ${socket.id} for broadcaster ${broadcaster_id}`);
     const broadcaster = broadcasters.get(broadcaster_id);
     if (broadcaster) {
       console.log('Broadcasting chat to viewers:', Array.from(broadcaster.viewers));
-      
-      broadcaster.viewers.forEach((viewerId) => {
-        console.log('Sending chat to viewer:', viewerId);
-        socket.to(viewerId).emit('stream-chat', { user_id: socket.id, message });
+
+      broadcaster.viewers.forEach((viewer) => {
+        console.log('Sending chat to viewer:', viewer.id);
+        socket.to(viewer.id).emit('stream-chat', { name: name, message });
       });
-      socket.to(broadcaster.id).emit('stream-chat', { user_id: socket.id, message });
+      socket.to(broadcaster.id).emit('stream-chat', { name: name, message });
     } else {
       console.error('Broadcaster not found for socket ID:', broadcaster_id);
     }
@@ -311,9 +316,9 @@ io.of("signal").on("connection", (socket: Socket) => {
     const broadcaster = broadcasters.get(socket.id);
     if (broadcaster) {
       console.log('Broadcasting reaction to viewers:', Array.from(broadcaster.viewers));
-      
-      broadcaster.viewers.forEach((viewerId) => {
-        socket.to(viewerId).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
+
+      broadcaster.viewers.forEach((viewer) => {
+        socket.to(viewer.id).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
       });
       socket.to(broadcaster.id).emit('stream-reaction', { user_id: broadcaster.user_id, reaction });
     } else {
@@ -353,7 +358,8 @@ io.of("signal").on("connection", (socket: Socket) => {
     const broadcaster = broadcasters.get(broadcaster_id);
 
     if (broadcaster) {
-      broadcaster.viewers.delete(socket.id);
+      // broadcaster.viewers.delete(socket.id);
+      broadcaster.viewers = broadcaster.viewers.filter((viewer) => viewer.id !== socket.id);
       console.log(`Viewer ${socket.id} successfully left broadcaster ${broadcaster_id}`);
       console.log('Current viewers for broadcaster:', Array.from(broadcaster.viewers));
 
@@ -387,8 +393,8 @@ io.of("signal").on("connection", (socket: Socket) => {
       const broadcaster = broadcasters.get(socket.id)!;
 
       // Notify all viewers that broadcaster has disconnected
-      broadcaster.viewers.forEach((viewerId) => {
-        io.to(viewerId).emit('broadcaster-disconnected', { broadcaster_id: socket.id });
+      broadcaster.viewers.forEach((viewer) => {
+        io.to(viewer.id).emit('broadcaster-disconnected', { broadcaster_id: socket.id });
       });
 
       broadcasters.delete(socket.id);
@@ -396,10 +402,12 @@ io.of("signal").on("connection", (socket: Socket) => {
     } else {
       // Check if disconnected user was a viewer
       broadcasters.forEach((broadcaster) => {
-        if (broadcaster.viewers.has(socket.id)) {
-          broadcaster.viewers.delete(socket.id);
-          broadcastBroadcastersList();
-        }
+        // if (broadcaster.viewers.has(socket.id)) {
+        //   broadcaster.viewers.delete(socket.id);
+        //   broadcastBroadcastersList();
+        // }
+        broadcaster.viewers = broadcaster.viewers.filter((viewer) => viewer.id !== socket.id);
+        broadcastBroadcastersList();
       });
     }
 
