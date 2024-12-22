@@ -339,28 +339,6 @@ io.of("signal").on("connection", (socket: Socket) => {
     socket.to(socket.id).emit('broadcaster-available', broadcastersList); // Send back to stream creator
   });
 
-  // Handle preview stream signaling
-  socket.on('request-preview', ({ broadcaster_id }) => {
-    console.log(`Preview requested from broadcaster ${broadcaster_id} by viewer ${socket.id}`);
-    socket.to(broadcaster_id).emit('request-preview', { viewer_id: socket.id });
-  });
-
-  socket.on('preview-offer', (data) => {
-    console.log('Received preview offer:', data);
-    socket.to(data.target_id).emit('preview-offer', {
-      offer: data.offer,
-      sender_id: socket.id
-    });
-  });
-
-  socket.on('preview-answer', (data) => {
-    console.log('Received preview answer:', data);
-    socket.to(data.target_id).emit('preview-answer', {
-      answer: data.answer,
-      sender_id: socket.id
-    });
-  });
-
   // Handle streaming-specific WebRTC signaling
   socket.on('stream-offer', (data) => {
     console.log('Received stream offer from:', socket.id, 'to:', data.target_id, 'Offer:', data.offer);
