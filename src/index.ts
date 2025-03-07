@@ -330,7 +330,6 @@ io.of("signal").on("connection", (socket: Socket) => {
     }
   });
 
-
   // Request broadcasters list
   socket.on('request-broadcasters', () => {
     console.log('Client requesting broadcasters list');
@@ -349,7 +348,6 @@ io.of("signal").on("connection", (socket: Socket) => {
     console.log('Received stream answer from:', socket.id, 'to:', data.target_id, 'Answer:', data.answer);
     socket.to(data.target_id).emit('stream-answer', { answer: data.answer, sender_id: socket.id });
   });
-
 
   socket.on('stream-ice-candidate', (data) => {
     console.log('Received stream ICE candidate:', data);
